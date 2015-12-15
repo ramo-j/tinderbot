@@ -24,6 +24,8 @@ CAAGm0PX4.....tZBwhBh
 123456789012345
 ```
 
+Note that this account ID is different to the profile id, eg, /profile.php?id=100010800000000
+
 ###Empty State File Format
 ```
 {}
