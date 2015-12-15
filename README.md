@@ -1,7 +1,7 @@
 #TinderBot
 Tinder trolling bot.
 
-This bot interects with Tinder such that it matches with everyone it can. It then pairs those matches, and for each pair forwards message from one party to the other. Classic MITM.
+This bot interects with Tinder such that it matches with everyone it can. It then pairs those matches, and for each pair forwards message from one party to the other. Classic MITM. You can watch the fun with the app on your phone, but the chat history is also dumped to the working directory for later viewing.
 
 ###How do I use it?
 
