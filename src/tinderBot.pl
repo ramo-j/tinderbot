@@ -300,7 +300,7 @@ processNewMessages();
 sendMessages();
 
 # like everyone
-likeAllThePeople();
+#likeAllThePeople();
 
 # save state file
 saveState();
