@@ -52,14 +52,30 @@ sub readState {
 	local $/= undef;
 	open(FILE, $stateFile) or die "Can't open $stateFile: $!";
 	$pairs = JSON->new->decode(<FILE>);
+	$tinderAuthToken = $pairs->{'tinderAuthToken'};
+	$myID = $pairs->{'myID'};
 	close(FILE);
 }
 
 # save the state json file
 sub saveState {
+	$pairs->{'tinderAuthToken'} = $tinderAuthToken;
+	$pairs->{'myID'} = $myID;
 	open(FILE, '>', $stateFile) or die "Can't open $stateFile: $!";
 	print FILE JSON->new->encode($pairs);
 	close(FILE);
+}
+
+# check if our auth is working
+sub checkAuth {
+	if (!defined $pairs->{'tinderAuthToken'}) {
+		return;
+	}
+	
+	my $curlStr = buildCurlURL({httpVerb => 'GET', path => 'meta', xAuthHeader => 1});
+	if (`$curlStr` eq 'Unauthorized') {
+		undef $pairs->{'tinderAuthToken'};
+	}
 }
 
 # build the api url for curl. Takes a hashmap with possible params httpVerb, path, xAuthHeader and postData
@@ -73,6 +89,10 @@ sub buildCurlURL {
 
 # get an authentication token from the tinder API
 sub tinderAuth {
+	if (defined $pairs->{'tinderAuthToken'}) {
+		return;
+	}
+
 	my $curlStr = buildCurlURL({httpVerb => 'POST', path => 'auth', postData => JSON->new->encode({facebook_token => $facebookAuthToken, facebook_id => $facebookProfileID, locale => 'en'})});
 	my $resp = `$curlStr`;
 	$resp = JSON->new->decode($resp);
@@ -88,7 +108,6 @@ sub tinderAuth {
 
 # get any updates from the tinder api
 sub getUpdates {
-#	my $curlStr = buildCurlURL({httpVerb => 'POST', path => 'updates', xAuthHeader => 1, postData => JSON->new->encode({last_activity_date => (defined $pairs->{'last_activity_date'} ? $pairs->{'last_activity_date'} : '')})});
 	my $curlStr = buildCurlURL({httpVerb => 'POST', path => 'updates', xAuthHeader => 1, postData => JSON->new->encode({last_activity_date => ''})});
 	my $resp = JSON->new->decode(`$curlStr`);
 
@@ -200,7 +219,7 @@ sub sendMessage {
 		return 0;
 	}
 
-	open(FILE, '>>', $pairs->{'conversationLog'}->{$args->{'message'}->{'from'}});
+	open(FILE, '>>', $pairs->{'conversationLog'}->{$args->{'message'}->{'from'}} . '.txt');
 	print FILE $args->{'message'}->{'from'} . ': ' . $args->{'message'}->{'message'} . "\n";
 	close(FILE);
 
@@ -211,12 +230,14 @@ sub sendMessage {
 sub likeAllThePeople {
 	my $likesRemaining = getLikesRemaining();
 	my $suggestions;
+	my $count = 0;
 
 	while ($likesRemaining > 0) {
 		$suggestions = getSuggestions();
 
 		for (@{$suggestions}) {
 			$likesRemaining = likeUser({id => $_});
+			$count++;
 			if ($likesRemaining > 0) {
 				sleep(1);
 			} else {
@@ -224,6 +245,10 @@ sub likeAllThePeople {
 			}
 		}
 		$likesRemaining = getLikesRemaining();
+	}
+	
+	if ($count > 0) {
+		print "$count people liked\n";
 	}
 }
 
@@ -281,6 +306,9 @@ readFBCreds({filename => shift});
 # read in state file
 readState({filename => shift});
 
+# check our token with a sample request
+checkAuth();
+
 # Authenticate to the tinder API
 tinderAuth();
 
@@ -300,7 +328,7 @@ processNewMessages();
 sendMessages();
 
 # like everyone
-#likeAllThePeople();
+likeAllThePeople();
 
 # save state file
 saveState();
