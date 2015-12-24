@@ -156,8 +156,6 @@ sub pairAvailable {
 
 # get any new messages, prepare them to be forwarded
 sub processNewMessages {
-#	print Dumper($pairs);
-
 	for (@{$updates->{'matches'}}) {
 		for (@{$_->{messages}}) {
 			if (doesMessageExist({message => $_})) {
@@ -215,8 +213,10 @@ sub sendMessage {
 	my $resp = JSON->new->decode(`$curlStr`);
 
 	if (defined $resp->{'error'}) {
-		print STDERR "Failure in sending message\nHTTP Response Code: $resp->{'code'}\nMessage: $resp->{'error'}\nWith curl command: $curlStr\n";
-		return 0;
+		if ($resp->{'error'} ne "Match not found") {
+			print STDERR "Failure in sending message\nHTTP Response Code: $resp->{'code'}\nMessage: $resp->{'error'}\nWith curl command: $curlStr\n";
+			return 0;
+		}
 	}
 
 	open(FILE, '>>', $pairs->{'conversationLog'}->{$args->{'message'}->{'from'}} . '.txt');
@@ -328,7 +328,7 @@ processNewMessages();
 sendMessages();
 
 # like everyone
-likeAllThePeople();
+#likeAllThePeople();
 
 # save state file
 saveState();
