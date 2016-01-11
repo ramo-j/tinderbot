@@ -223,6 +223,8 @@ sub sendMessage {
 	print FILE $args->{'message'}->{'from'} . ': ' . $args->{'message'}->{'message'} . "\n";
 	close(FILE);
 
+	saveState();
+
 	return 1;
 }
 
@@ -328,7 +330,7 @@ processNewMessages();
 sendMessages();
 
 # like everyone
-#likeAllThePeople();
+likeAllThePeople();
 
 # save state file
 saveState();
